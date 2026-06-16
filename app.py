@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import html
 import json
+import os
 import re
 import time
 from datetime import datetime
@@ -17,6 +18,9 @@ from typing import Any
 import httpx
 import requests
 import streamlit as st
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import database as db
 from share_card import render_share_card_image, share_card_cache_key
@@ -1335,19 +1339,24 @@ def render_song_cards(songs: list[dict[str, Any]]) -> None:
 
 
 def sidebar_config() -> tuple[str | None, str | None, str, float, bool, str]:
+    env_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY") or ""
+    env_base = os.getenv("OPENAI_BASE_URL") or "https://api.deepseek.com/v1"
+    env_model = os.getenv("LLM_MODEL") or "deepseek-v4-pro"
+
     page = st.sidebar.radio(
         "功能导航",
         ["🎧 推荐歌单", "📊 情绪趋势"],
         key="nav_page",
     )
     st.sidebar.header("⚙️ API 配置")
-    api_key = st.sidebar.text_input("API Key", type="password", placeholder="sk-...")
+    api_key = st.sidebar.text_input("API Key", type="password", value=env_key, placeholder="sk-...",
+                                    help="可在 .env 文件中设置 DEEPSEEK_API_KEY，无需每次手动输入")
     base_url = st.sidebar.text_input(
         "Base URL（可选）",
-        value="https://api.deepseek.com",
+        value=env_base,
         help="DeepSeek 填 https://api.deepseek.com，不要加 /v1",
     )
-    model = st.sidebar.text_input("模型名称", value="deepseek-chat")
+    model = st.sidebar.text_input("模型名称", value=env_model)
     fast_mode = st.sidebar.toggle(
         "⚡ 快速模式（推荐）",
         value=True,
@@ -1369,7 +1378,7 @@ def sidebar_config() -> tuple[str | None, str | None, str, float, bool, str]:
                 st.sidebar.error(msg)
 
     st.sidebar.caption(
-        "**DeepSeek：** Base URL=`https://api.deepseek.com`，模型=`deepseek-chat`  \n"
+        "**DeepSeek：** Base URL=`https://api.deepseek.com/v1`，模型=`deepseek-v4-pro`  \n"
         "**勿用** `deepseek-reasoner`（很慢）。生成不出时先点「测试 API 连接」。"
     )
     render_sidebar_history()
